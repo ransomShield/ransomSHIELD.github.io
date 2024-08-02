@@ -30,11 +30,11 @@ function Show-Notification {
     $SerializedXml.LoadXml($RawXml.OuterXml)
 
     $Toast = [Windows.UI.Notifications.ToastNotification]::new($SerializedXml)
-    $Toast.Tag = "RansomWHERE Agent"
-    $Toast.Group = "RansomWHERE Agent"
+    $Toast.Tag = "RansomSHIELD Agent"
+    $Toast.Group = "RansomSHIELD Agent"
     $Toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
-    $Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("RansomWHERE")
+    $Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("RansomSHIELD")
     $Notifier.Show($Toast);
 }
 
