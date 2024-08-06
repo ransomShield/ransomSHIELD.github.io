@@ -33,7 +33,7 @@ try{
     schtasks /Run /TN $taskName # start agent
 
     # install notify agent
-    $actionNotify = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $argNotify
+    $actionNotify = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $argNotify -WorkingDirectory $folderPath;
     $triggerNotify = New-ScheduledTaskTrigger -AtLogOn
     $principalNotify = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Administrators" -RunLevel Highest
     $taskNotify = New-ScheduledTask -Action $actionNotify -Principal $principalNotify -Trigger $triggerNotify -Settings $settings
