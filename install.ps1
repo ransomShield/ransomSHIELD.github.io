@@ -1,4 +1,5 @@
-﻿$folderPath = "C:\programData\ransomSHIELD"
+﻿# configurable items below
+$folderPath = "C:\programData\ransomSHIELD"
 $taskName = "ransomSHIELD"
 $taskNameNotify = "RS notification"
 $user = "SYSTEM"
