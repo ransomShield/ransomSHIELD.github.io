@@ -1,7 +1,8 @@
 # Define the event log and event ID you want to monitor
 $logName = "Application"
 $eventId = 6666  # Replace with the event ID you're interested in
-
+$versionUrl = "https://ransomSHIELD.github.io//version.txt"
+$taskName = "ransomSHIELD"
 # Function to write timestamped log messages
 function Write-Log {
     param([string]$message)
@@ -34,7 +35,7 @@ function Show-Notification {
     $Toast.Group = "RansomSHIELD Agent"
     $Toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
-    $Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("RansomSHIELD")
+    $Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("RansomWHERE")
     $Notifier.Show($Toast);
 }
 
@@ -72,13 +73,30 @@ $subscription.Enabled = $true
 Write-Log "Monitoring $logName for EventID $eventId. Press Ctrl+C to exit."
 
 try {
+    $i = 0
     while ($true) {
         Start-Sleep -Seconds 5
-        Write-Log "Watcher state: $($subscription.Enabled)"
-        
-        # Optionally, generate a test event
-        # Write-Log "Generating test event..."
-        # Write-EventLog -LogName $logName -Source "PowerShell" -EventId $eventId -EntryType Information -Message "Test event"
+        Write-Log "$i Watcher state: $($subscription.Enabled)"
+        $i++
+        if($i -lt 60) { continue } # checking version every 5 minutes
+        $i = 0
+        $webClient = New-Object System.Net.WebClient
+        $webClient.Encoding = [System.Text.Encoding]::UTF8
+        $webcontent = $webClient.DownloadString($versionUrl)
+        $folderName = "version" + $webContent.Trim()
+        if($folderName -ne "") {
+            # Check if the local folder exists
+                if (Test-Path -Path $folderName -PathType Container) {
+                    Write-Host "'$folderName' is latest version."
+                } else {
+                    Write-Host "Updating to '$folderName'..."
+                    Get-ChildItem -Directory -Filter ".\version*" -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+                    New-Item -Path $folderName -ItemType Directory -ErrorAction SilentlyContinue | Out-Null
+                    # restart sch task
+                    schtasks /End /TN $taskName
+                    schtasks /Run /TN $taskName
+                }
+        } 
     }
 }
 finally {
