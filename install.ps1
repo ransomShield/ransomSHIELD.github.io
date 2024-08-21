@@ -54,7 +54,6 @@ try{
     # for update monitoring
     $actionUpdate = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $argUpdate -WorkingDirectory $folderPath; 
     $trigger = New-ScheduledTaskTrigger -AtStartup; 
-    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Days 0) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
     Register-ScheduledTask -TaskName $taskNameUpdate -Action $actionUpdate -Trigger $trigger -User $user -RunLevel Highest -Settings $settings
     schtasks /Run /TN $taskNameUpdate # start agent
 
