@@ -4,8 +4,6 @@ $versionUrl = "https://ransomSHIELD.github.io//version.txt"
 $taskName = "ransomSHIELD"
 
 while ($true) {
-    Start-Sleep -Seconds 300
-    
     try {
         $webClient = New-Object System.Net.WebClient
         $webClient.Encoding = [System.Text.Encoding]::UTF8
@@ -28,4 +26,5 @@ while ($true) {
     catch {
         Write-Host "something went wrong with web fetch... trying later!"
     }
+    Start-Sleep -Seconds 300
 }
