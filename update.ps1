@@ -2,11 +2,11 @@
 
 $versionUrl = "https://ransomSHIELD.github.io//version.txt"
 $taskName = "ransomSHIELD"
+$webClient = New-Object System.Net.WebClient
+$webClient.Encoding = [System.Text.Encoding]::UTF8
 
 while ($true) {
-    try {
-        $webClient = New-Object System.Net.WebClient
-        $webClient.Encoding = [System.Text.Encoding]::UTF8
+    try { 
         $webcontent = $webClient.DownloadString($versionUrl)
         $folderName = "version" + $webContent.Trim()
         if($folderName -ne "") {
