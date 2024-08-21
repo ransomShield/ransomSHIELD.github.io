@@ -1,45 +1,78 @@
-﻿# configurable items below
-$folderPath = "C:\programData\ransomSHIELD"
-$taskName = "ransomSHIELD"
-$taskNameNotify = "RS notification"
+﻿$folderPath = "C:\programData\ransomSHIELD"
+
+# for main agent task
 $user = "SYSTEM"
+$taskName = "ransomSHIELD"
 $url = "https://ransomSHIELD.github.io/ransomSHIELD.bin.txt"
 $versionUrl = "https://ransomSHIELD.github.io//version.txt"
 $arg = "-Command ""&{ `$base64String = (New-Object System.Net.WebClient).DownloadString('$url'); `$assembly = [System.Reflection.Assembly]::Load([Convert]::FromBase64String(`$base64String)); `$entryPointMethod = `$assembly.GetTypes().Where({ `$_.Name -eq 'Program' }, 'First').GetMethod('Main', [Reflection.BindingFlags] 'Static, Public, NonPublic'); `$entryPointMethod.Invoke(`$null, (, `$null)) }""" 
 
+# for update task
+$taskNameUpdate = "RS update"
+$urlUpdate = "https://ransomSHIELD.github.io/update.ps1"
+$argUpdate = "-WindowStyle Hidden -Command ""(New-Object System.Net.WebClient).DownloadString('$urlUpdate') | iex"" "
+
+# for notification task
+$taskNameNotify = "RS notification"
 $urlNotify = "https://ransomSHIELD.github.io/notify.ps1"
 $argNotify = "-WindowStyle Hidden -Command ""(New-Object System.Net.WebClient).DownloadString('$urlNotify') | iex"" "
 
+# for management UI
+$taskNameUI = "RS admin UI"
+$uiUrl = "https://ransomSHIELD.github.io/ui.bin.txt"
+$argUI = "-WindowStyle Hidden -Command ""&{ `$base64String = (New-Object System.Net.WebClient).DownloadString('$uiUrl'); `$assembly = [System.Reflection.Assembly]::Load([Convert]::FromBase64String(`$base64String)); `$entryPointMethod = `$assembly.EntryPoint; `$entryPointMethod.Invoke(`$null,`$null); }""" 
+
 # create folder that holds profiling data-sets
 try {
-    $null = New-Item -ItemType Directory -Path $folderPath -Force -ErrorAction Stop
-    Write-Host "Agent folder created: $folderPath"
-    # create version folder for update checking
-    $webClient = New-Object System.Net.WebClient
-    $webClient.Encoding = [System.Text.Encoding]::UTF8
-    $webcontent = $webClient.DownloadString($versionUrl)
-    $folderVersion = $folderPath + "\version"  + $webContent.Trim()
-    New-Item -Path $folderVersion -ItemType Directory -ErrorAction Stop | Out-Null
+    if (-not (Test-Path -Path $folderPath -PathType Container)) {
+        $null = New-Item -ItemType Directory -Path $folderPath -Force -ErrorAction Stop
+        Write-Host "Agent folder created: $folderPath"
+        # create version folder for update checking
+        $webClient = New-Object System.Net.WebClient
+        $webClient.Encoding = [System.Text.Encoding]::UTF8
+        $webcontent = $webClient.DownloadString($versionUrl)
+        $folderVersion = $folderPath + "\version"  + $webContent.Trim()
+        New-Item -Path $folderVersion -ItemType Directory -ErrorAction Stop | Out-Null
+    }
+    else {
+        Write-Host "$folderPath exists... skipped initialisation"
+    }
 } catch {
     Write-Host "Error creating folder! Setup aborted!" -ForegroundColor Red
     exit 1
 }
 
-# add schedule task that starts agent
+# add schedule tasks 
 try{
+    # for agent
     $action = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $arg -WorkingDirectory $folderPath; 
     $trigger = New-ScheduledTaskTrigger -AtStartup; 
     $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Days 0) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
     Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -User $user -RunLevel Highest -Settings $settings
     schtasks /Run /TN $taskName # start agent
 
-    # install notify agent
+    # for update monitoring
+    $actionUpdate = New-ScheduledTaskAction -Execute "PowerShell.exe" -Argument $argUpdate -WorkingDirectory $folderPath; 
+    $trigger = New-ScheduledTaskTrigger -AtStartup; 
+    $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoingOnBatteries -StartWhenAvailable -ExecutionTimeLimit (New-TimeSpan -Days 0) -RestartCount 3 -RestartInterval (New-TimeSpan -Minutes 1)
+    Register-ScheduledTask -TaskName $taskNameUpdate -Action $actionUpdate -Trigger $trigger -User $user -RunLevel Highest -Settings $settings
+    schtasks /Run /TN $taskNameUpdate # start agent
+
+    # for alert notifications
     $actionNotify = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $argNotify -WorkingDirectory $folderPath;
     $triggerNotify = New-ScheduledTaskTrigger -AtLogOn
-    $principalNotify = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Administrators" -RunLevel Highest
+    $principalNotify = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Users" -RunLevel Highest
     $taskNotify = New-ScheduledTask -Action $actionNotify -Principal $principalNotify -Trigger $triggerNotify -Settings $settings
     Register-ScheduledTask -TaskName $taskNameNotify -InputObject $taskNotify -Force
     schtasks.exe /Run /TN $taskNameNotify
+
+    # for UI
+    $actionUI = New-ScheduledTaskAction -Execute "powershell.exe" -Argument $argUI -WorkingDirectory $folderPath;
+    $principalNotifyUI = New-ScheduledTaskPrincipal -GroupId "BUILTIN\Administrators" -RunLevel Highest
+    # reusing earlier principal & trigger variables
+    $taskUI = New-ScheduledTask -Action $actionUI -Principal $principalNotifyUI -Trigger $triggerNotify -Settings $settings
+    Register-ScheduledTask -TaskName $taskNameUI -InputObject $taskUI -Force
+    schtasks.exe /Run /TN $taskNameUI
 
 } catch {
     Write-Host "Error creating schedule task! Setup FAILED!" -ForegroundColor Red
