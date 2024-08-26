@@ -30,11 +30,24 @@ try {
 
         # prevent Users writing
         $acl = Get-Acl $folderPath
-        $inheritanceFlag = [System.Security.AccessControl.InheritanceFlags]"ContainerInherit, ObjectInherit"
-        $propagationFlag = [System.Security.AccessControl.PropagationFlags]::None
-        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Users", "Write", $inheritanceFlag, $propagationFlag, "Deny")
-        $acl.AddAccessRule($rule)
-        Set-Acl $folderPath $acl
+        $acl.SetAccessRuleProtection($true, $false)
+
+        # Remove all existing rules
+        $acl.Access | ForEach-Object { $acl.RemoveAccessRule($_) }
+
+        # Create new rules for SYSTEM and Administrators with full control
+        $systemSID = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::LocalSystemSid, $null)
+        $adminsSID = New-Object System.Security.Principal.SecurityIdentifier([System.Security.Principal.WellKnownSidType]::BuiltinAdministratorsSid, $null)
+
+        $systemRule = New-Object System.Security.AccessControl.FileSystemAccessRule($systemSID, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+        $adminsRule = New-Object System.Security.AccessControl.FileSystemAccessRule($adminsSID, "FullControl", "ContainerInherit,ObjectInherit", "None", "Allow")
+
+        # Add the new rules
+        $acl.AddAccessRule($systemRule)
+        $acl.AddAccessRule($adminsRule)
+
+        # Apply the modified ACL
+        Set-Acl -Path $folderPath -AclObject $acl -ErrorAction Stop
 
         # create version folder for update checking
         $webClient = New-Object System.Net.WebClient
