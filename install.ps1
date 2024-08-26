@@ -27,6 +27,15 @@ try {
     if (-not (Test-Path -Path $folderPath -PathType Container)) {
         $null = New-Item -ItemType Directory -Path $folderPath -Force -ErrorAction Stop
         Write-Host "Agent folder created: $folderPath"
+
+        # prevent Users writing
+        $acl = Get-Acl $folderPath
+        $inheritanceFlag = [System.Security.AccessControl.InheritanceFlags]"ContainerInherit, ObjectInherit"
+        $propagationFlag = [System.Security.AccessControl.PropagationFlags]::None
+        $rule = New-Object System.Security.AccessControl.FileSystemAccessRule("Users", "Write", $inheritanceFlag, $propagationFlag, "Deny")
+        $acl.AddAccessRule($rule)
+        Set-Acl $folderPath $acl
+
         # create version folder for update checking
         $webClient = New-Object System.Net.WebClient
         $webClient.Encoding = [System.Text.Encoding]::UTF8
