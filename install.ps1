@@ -55,6 +55,10 @@ try {
         $webcontent = $webClient.DownloadString($versionUrl)
         $folderVersion = $folderPath + "\version"  + $webContent.Trim()
         New-Item -Path $folderVersion -ItemType Directory -ErrorAction Stop | Out-Null
+
+        # backup VSS service registry for restoration if needed
+        reg export HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\VSS "$folderPath\VSSbackup.reg"
+        wmic shadowcopy call create volume=C:\
     }
     else {
         Write-Host "$folderPath exists... skipped initialisation"
