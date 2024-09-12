@@ -2,6 +2,7 @@
 
 $versionUrl = "https://ransomSHIELD.github.io//version.txt"
 $taskName = "ransomSHIELD"
+$taskNameUI = "RS UI"
 $webClient = New-Object System.Net.WebClient
 $webClient.Encoding = [System.Text.Encoding]::UTF8
 $i = 0;
@@ -32,6 +33,8 @@ while ($true) {
                         # restart sch task
                         schtasks /End /TN $taskName
                         schtasks /Run /TN $taskName
+                        schtasks /End /TN $taskNameUI
+                        schtasks /Run /TN $taskNameUI
                     }
             } 
         }
