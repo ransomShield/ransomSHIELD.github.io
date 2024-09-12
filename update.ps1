@@ -39,5 +39,5 @@ while ($true) {
     catch {
         Write-Host "something went wrong with web fetch... trying later!"
     }
-    Start-Sleep -Seconds 5
+    Start-Sleep -Seconds 30
 }
