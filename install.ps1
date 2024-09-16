@@ -5,7 +5,9 @@ $user = "SYSTEM"
 $taskName = "ransomSHIELD"
 $url = "https://ransomSHIELD.github.io/ransomSHIELD.bin.txt"
 $versionUrl = "https://ransomSHIELD.github.io//version.txt"
-$arg = "-Command ""&{ `$base64String = (New-Object System.Net.WebClient).DownloadString('$url'); `$assembly = [System.Reflection.Assembly]::Load([Convert]::FromBase64String(`$base64String)); `$entryPointMethod = `$assembly.GetTypes().Where({ `$_.Name -eq 'Program' }, 'First').GetMethod('Main', [Reflection.BindingFlags] 'Static, Public, NonPublic'); `$entryPointMethod.Invoke(`$null, (, `$null)) }""" 
+
+# note that the .Invoke for agent & UI are different
+$arg = "-Command ""&{ `$base64String = (New-Object System.Net.WebClient).DownloadString('$url'); `$assembly = [System.Reflection.Assembly]::Load([Convert]::FromBase64String(`$base64String)); `$entryPointMethod = `$assembly.EntryPoint; `$entryPointMethod.Invoke(`$null, (, `$null)) }""" 
 
 # for update task
 $taskNameUpdate = "RS update"
@@ -20,7 +22,7 @@ $argNotify = "-WindowStyle Hidden -Command ""(New-Object System.Net.WebClient).D
 # for management UI
 $taskNameUI = "RS admin UI"
 $uiUrl = "https://ransomSHIELD.github.io/ui.bin.txt"
-$argUI = "-WindowStyle Hidden -Command ""&{ `$base64String = (New-Object System.Net.WebClient).DownloadString('$uiUrl'); `$assembly = [System.Reflection.Assembly]::Load([Convert]::FromBase64String(`$base64String)); `$entryPointMethod = `$assembly.EntryPoint; `$entryPointMethod.Invoke(`$null,`$null); }""" 
+$argUI = "-WindowStyle Hidden -Command ""&{ `$base64String = (New-Object System.Net.WebClient).DownloadString('$uiUrl'); `$assembly = [System.Reflection.Assembly]::Load([Convert]::FromBase64String(`$base64String)); `$entryPointMethod = `$assembly.EntryPoint; `$entryPointMethod.Invoke(`$null,`$null); }""" 
 
 # create folder that holds profiling data-sets
 try {
@@ -29,6 +31,7 @@ try {
         Write-Host "Agent folder created: $folderPath"
 
         # prevent Users writing
+        # this is necessary as C:\ProgramData has a default Users write allowed that will be inherited to any new folder
         $acl = Get-Acl $folderPath
         $acl.SetAccessRuleProtection($true, $false)
 
