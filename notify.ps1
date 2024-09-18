@@ -1,8 +1,7 @@
 # Define the event log and event ID you want to monitor
 $logName = "Application"
 $eventId = 6666  # Replace with the event ID you're interested in
-$versionUrl = "https://ransomSHIELD.github.io//version.txt"
-$taskName = "ransomSHIELD"
+
 # Function to write timestamped log messages
 function Write-Log {
     param([string]$message)
@@ -35,31 +34,30 @@ function Show-Notification {
     $Toast.Group = "RansomSHIELD Agent"
     $Toast.ExpirationTime = [DateTimeOffset]::Now.AddMinutes(5)
 
-    $Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("RansomWHERE")
+    $Notifier = [Windows.UI.Notifications.ToastNotificationManager]::CreateToastNotifier("RansomSHIELD")
     $Notifier.Show($Toast);
 }
 
 
 # Define the action to take when the event is detected
 $action = {
-   param($sourceObject, $eventArgs)
+    param($sourceObject, $event)
     Write-Log "Event detected. Analyzing..."
     
-    Show-Notification -ToastTitle "Threat Neutralised" -ToastText "Please review with Event Viewer > Application Log > EventID 6666!"
-
     # Log the entire event object for debugging
-    Write-Log ("Full event object:`n" + ($eventArgs | Format-List | Out-String))
-    if ($eventArgs.EventRecord) {
-        $eventRecord = $eventArgs.EventRecord
+    Write-Log ("Full event object:`n" + ($event | Format-List | Out-String))
+    if ($event.EventRecord) {
+        $eventRecord = $event.EventRecord
+        Show-Notification -ToastTitle "Threat Neutralised" -ToastText "Please review with RansomSHIELD Tasktray UI with local admin account."
         write-log ($eventRecord.Properties | Format-List | Out-String)
-        Write-Log "Event ID: $($eventRecord.Id)"
+        Write-Log "Event ID: "
         Write-Log "Event Log Name: $($eventRecord.LogName)"
         Write-Log "Event Message: $($eventRecord.Message)"
     }
 }
 
 Write-Log "Creating event query..."
-$query = [System.Diagnostics.Eventing.Reader.EventLogQuery]::new($logName, [System.Diagnostics.Eventing.Reader.PathType]::LogName, "*[System[(EventID=$eventId)]]")
+$query = [System.Diagnostics.Eventing.Reader.EventLogQuery]::new($logName, [System.Diagnostics.Eventing.Reader.PathType]::LogName, "*[System[EventID=$eventId or EventID=6667]]")
 
 Write-Log "Creating event watcher..."
 $subscription = [System.Diagnostics.Eventing.Reader.EventLogWatcher]::new($query)
@@ -74,8 +72,9 @@ Write-Log "Monitoring $logName for EventID $eventId. Press Ctrl+C to exit."
 
 try {
     while ($true) {
-        Start-Sleep -Seconds 5
-        Write-Log "$i Watcher state: $($subscription.Enabled)"
+        Start-Sleep -Milliseconds 500
+        #Write-Log "$i Watcher state: $($subscription.Enabled)"
+        #Read-Host -Prompt "Please enter a key"
     }
 }
 finally {
